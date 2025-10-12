@@ -4,6 +4,8 @@ import { ISnake } from "@/app/types/snake";
 import { IEntity } from "@/app/types/entity";
 import { FIELD_SIZE } from "@/app/utils/constants";
 import { Orientation } from "@/app/types/orientation";
+import { Text } from "@/app/components/text/text";
+import { Tile } from "@/app/components/tile";
 
 type GameboardProps = {
   snake: ISnake;
@@ -20,37 +22,33 @@ export default function Gameboard({
 }: GameboardProps) {
   return (
     <>
-      <div>
-        high score:{" "}
-        {highScore > snake.tail.length ? highScore : snake.tail.length}
-      </div>
-      <div>current score: {snake.tail.length}</div>
       <div
-        className={`absolute left-0 right-0 top-0 bottom-0 m-auto grid grid-cols-${FIELD_SIZE} grid-rows-${FIELD_SIZE} ${orientation === "landscape" ? "size-dvh" : "size-dvw"} bg-amber-400`}
+        className={`flex flex-col ${orientation === "landscape" ? "size-dvh p-4" : "size-dvw w-full text-center pt-4"}`}
+      >
+        <Text type={"p"}>
+          {"High score: "}
+          {highScore > snake.tail.length ? highScore : snake.tail.length}
+        </Text>
+        <Text type={"p"}>Current score: {snake.tail.length}</Text>
+      </div>
+      <div
+        className={`absolute left-0 right-0 top-0 bottom-0 m-auto grid grid-cols-${FIELD_SIZE} grid-rows-${FIELD_SIZE} ${orientation === "landscape" ? "size-dvh" : "size-dvw"}  bg-amber-400`}
       >
         {entities.map((entity) => (
-          <div
-            key={entity.id}
-            className={`grid col-start-[${entity.x}] col-span-1 row-start-[${entity.y}] row-span-1`}
-          >
+          <Tile x={entity.x} y={entity.y} key={entity.id}>
             {entity.type === "food" && "🍎"}
-          </div>
+          </Tile>
         ))}
 
         {snake.tail.map((part, index) => (
-          <div
-            key={index}
-            className={`grid col-start-[${part?.x}] col-span-1 row-start-[${part?.y}] row-span-1`}
-          >
+          <Tile x={part.x} y={part.y} key={index}>
             🟢
-          </div>
+          </Tile>
         ))}
         {snake.head && (
-          <div
-            className={`grid col-start-[${snake.head.x}] col-span-1 row-start-[${snake.head.y}] row-span-1`}
-          >
+          <Tile x={snake.head.x} y={snake.head.y}>
             🐍
-          </div>
+          </Tile>
         )}
       </div>
     </>

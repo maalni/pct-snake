@@ -20,6 +20,7 @@ import { useSwipeable } from "react-swipeable";
 import { useKeyboard } from "@/app/hooks/useKeyboard";
 import { useApi } from "@/app/hooks/useApi";
 import { useOrientation } from "@/app/hooks/useOrientation";
+import { Text } from "@/app/components/text/text";
 
 export default function Home() {
   const [highScore, setHighScore] = useState<number>(0);
@@ -202,7 +203,7 @@ export default function Home() {
     }
   };
 
-  useKeyboard(keyListener);
+  useKeyboard(gamestate, keyListener);
 
   const startGame = () => {
     if (gamestate.current !== Gamestate.READY) {
@@ -241,7 +242,9 @@ export default function Home() {
   return (
     <div
       {...swipeHandlers}
-      className={"absolute left-0 right-0 top-0 bottom-0"}
+      className={
+        "absolute left-0 right-0 top-0 bottom-0 z-50 w-full h-full bg-black"
+      }
     >
       <Gameboard
         snake={snake}
@@ -252,16 +255,15 @@ export default function Home() {
       {gamestate.current === Gamestate.READY && (
         <div
           className={
-            "absolute left-0 right-0 top-0 bottom-0 z-50 w-full h-full flex flex-1 bg-black/50 justify-center items-center"
+            "absolute left-0 right-0 top-0 bottom-0 z-50 w-full h-full flex flex-1 bg-black/50 justify-center items-center p-4 text-center"
           }
         >
-          <span className={"flex"}>
-            {" "}
+          <Text type={"title"}>
             {orientation === "landscape"
               ? "Press any direction key"
-              : "swipe in any direction"}{" "}
-            to begin
-          </span>
+              : "Swipe in any direction"}
+            {" to begin"}
+          </Text>
         </div>
       )}
       {gamestate.current === Gamestate.GAMEOVER && (
