@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Highscore } from "@/app/types/highscore";
+import { useApi } from "@/app/hooks/useApi";
 
 type GameoverOverlayProps = {
   onSubmitAction: () => void;
@@ -14,29 +15,15 @@ export default function GameoverOverlay({
 }: GameoverOverlayProps) {
   const [highscores, setHighscores] = useState<Highscore[]>([]);
   const [name, setName] = useState<string>("");
-
-  const fetchHighscores = async () => {
-    const response = await fetch("/api/highscores");
-
-    if (response.ok) {
-      const result: Highscore[] = await response.json();
-
-      setHighscores(result);
-    }
-  };
-
-  const sendHighscore = () => {
-    fetch("/api/highscores", {
-      method: "PUT",
-      body: JSON.stringify({ name: name, score: score }),
-    });
-
-    onSubmitAction();
-  };
+  const { fetchHighscores, sendHighscore } = useApi();
 
   useEffect(() => {
-    fetchHighscores();
+    fetchHighscores(setHighscores);
   }, []);
+
+  const handleClick = () => {
+    sendHighscore(name, score, onSubmitAction);
+  };
 
   return (
     <div
@@ -57,7 +44,7 @@ export default function GameoverOverlay({
           onChange={(e) => setName(e.target.value)}
         />
       </div>
-      <button onClick={sendHighscore}>submit</button>
+      <button onClick={handleClick}>submit</button>
     </div>
   );
 }

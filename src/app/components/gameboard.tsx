@@ -2,32 +2,22 @@
 
 import { ISnake } from "@/app/types/snake";
 import { IEntity } from "@/app/types/entity";
-import { useEffect, useState } from "react";
 import { FIELD_SIZE } from "@/app/utils/constants";
+import { Orientation } from "@/app/types/orientation";
 
 type GameboardProps = {
   snake: ISnake;
   entities: IEntity[];
   highScore: number;
+  orientation: Orientation;
 };
 
 export default function Gameboard({
   snake,
   entities,
   highScore,
+  orientation,
 }: GameboardProps) {
-  const [isLandscape, setIsLandscape] = useState(true);
-
-  useEffect(() => {
-    function handleResize() {
-      setIsLandscape(window.innerWidth > window.innerHeight);
-    }
-    handleResize(); // <-- Added, sets initial value right away once loaded in the browser
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   return (
     <>
       <div>
@@ -36,7 +26,7 @@ export default function Gameboard({
       </div>
       <div>current score: {snake.tail.length}</div>
       <div
-        className={`absolute left-0 right-0 top-0 bottom-0 m-auto grid grid-cols-${FIELD_SIZE} grid-rows-${FIELD_SIZE} ${isLandscape ? "size-dvh" : "size-dvw"} bg-amber-400`}
+        className={`absolute left-0 right-0 top-0 bottom-0 m-auto grid grid-cols-${FIELD_SIZE} grid-rows-${FIELD_SIZE} ${orientation === "landscape" ? "size-dvh" : "size-dvw"} bg-amber-400`}
       >
         {entities.map((entity) => (
           <div

@@ -8,11 +8,18 @@ import { EMovement } from "@/app/enum/movement";
 import { Position } from "@/app/types/position";
 import Gameboard from "@/app/components/gameboard";
 
-import { randomNumberBetween } from "@/app/utils/helper";
+import {
+  mapKeysToMovement,
+  randomNumberBetween,
+  randomPosition,
+} from "@/app/utils/helper";
 import { Gamestate } from "@/app/enum/gamestate";
 import GameoverOverlay from "@/app/components/gameover";
 import { FIELD_SIZE } from "@/app/utils/constants";
-import { Highscore } from "@/app/types/highscore";
+import { useSwipeable } from "react-swipeable";
+import { useKeyboard } from "@/app/hooks/useKeyboard";
+import { useApi } from "@/app/hooks/useApi";
+import { useOrientation } from "@/app/hooks/useOrientation";
 
 export default function Home() {
   const [highScore, setHighScore] = useState<number>(0);
@@ -25,6 +32,12 @@ export default function Home() {
   const lastMovement = useRef<EMovement>(EMovement.NONE);
   const nextMovement = useRef(EMovement.NONE);
   const gamestate = useRef<Gamestate>(Gamestate.SETUP);
+  const swipeHandlers = useSwipeable({
+    onSwiped: (e) => keyListener(e.dir),
+    preventScrollOnSwipe: true,
+  });
+  const { fetchHighscore } = useApi();
+  const orientation = useOrientation();
 
   const gameLoop = () => {
     if (gamestate.current !== Gamestate.RUNNING) {
@@ -139,75 +152,6 @@ export default function Home() {
     );
   };
 
-  const keyListener = (e: globalThis.KeyboardEvent) => {
-    let tempMovement: EMovement = lastMovement.current;
-
-    if (gamestate.current === Gamestate.RUNNING) {
-      e.preventDefault();
-    }
-
-    switch (e.key) {
-      case "ArrowUp":
-      case "w":
-      case "W":
-        if (lastMovement.current === EMovement.DOWN) {
-          break;
-        }
-
-        tempMovement = EMovement.UP;
-        break;
-      case "ArrowDown":
-      case "s":
-      case "S":
-        if (lastMovement.current === EMovement.UP) {
-          break;
-        }
-
-        tempMovement = EMovement.DOWN;
-        break;
-      case "ArrowLeft":
-      case "a":
-      case "A":
-        if (lastMovement.current === EMovement.RIGHT) {
-          break;
-        }
-
-        tempMovement = EMovement.LEFT;
-        break;
-      case "ArrowRight":
-      case "d":
-      case "D":
-        if (lastMovement.current === EMovement.LEFT) {
-          break;
-        }
-
-        tempMovement = EMovement.RIGHT;
-        break;
-    }
-
-    nextMovement.current = tempMovement;
-
-    if (
-      gamestate.current === Gamestate.READY &&
-      [
-        "ArrowUp",
-        "w",
-        "W",
-        "ArrowDown",
-        "s",
-        "S",
-        "ArrowLeft",
-        "a",
-        "A",
-        "ArrowRight",
-        "d",
-        "D",
-      ].includes(e.key)
-    ) {
-      startGame();
-    }
-  };
-
   const spawnEntity = (
     type: "food",
     options?: { position?: Position; decay?: number },
@@ -230,12 +174,35 @@ export default function Home() {
     nextEntityId.current++;
   };
 
-  const randomPosition = (): Position => {
-    return {
-      x: randomNumberBetween(1, FIELD_SIZE),
-      y: randomNumberBetween(1, FIELD_SIZE),
-    };
+  const keyListener = (key: string) => {
+    nextMovement.current = mapKeysToMovement(key, lastMovement.current);
+
+    if (
+      gamestate.current === Gamestate.READY &&
+      [
+        "Up",
+        "ArrowUp",
+        "w",
+        "W",
+        "Down",
+        "ArrowDown",
+        "s",
+        "S",
+        "Left",
+        "ArrowLeft",
+        "a",
+        "A",
+        "Right",
+        "ArrowRight",
+        "d",
+        "D",
+      ].includes(key)
+    ) {
+      startGame();
+    }
   };
+
+  useKeyboard(keyListener);
 
   const startGame = () => {
     if (gamestate.current !== Gamestate.READY) {
@@ -255,7 +222,7 @@ export default function Home() {
   };
 
   const setupGame = () => {
-    fetchHighscore();
+    fetchHighscore(setHighScore);
     lastMovement.current = EMovement.NONE;
     nextMovement.current = EMovement.NONE;
     setEntities([]);
@@ -263,23 +230,8 @@ export default function Home() {
     gamestate.current = Gamestate.READY;
   };
 
-  const fetchHighscore = async () => {
-    const response = await fetch("/api/highscore");
-
-    if (response.ok) {
-      const result: Highscore = await response.json();
-
-      setHighScore(result.score);
-    }
-  };
-
   useEffect(() => {
-    document.addEventListener("keydown", keyListener);
     setupGame();
-
-    return () => {
-      document.removeEventListener("keydown", keyListener);
-    };
   }, []);
 
   useInterval(() => {
@@ -287,20 +239,34 @@ export default function Home() {
   }, 150);
 
   return (
-    <>
-      <Gameboard snake={snake} entities={entities} highScore={highScore} />
+    <div
+      {...swipeHandlers}
+      className={"absolute left-0 right-0 top-0 bottom-0"}
+    >
+      <Gameboard
+        snake={snake}
+        entities={entities}
+        highScore={highScore}
+        orientation={orientation}
+      />
       {gamestate.current === Gamestate.READY && (
         <div
           className={
             "absolute left-0 right-0 top-0 bottom-0 z-50 w-full h-full flex flex-1 bg-black/50 justify-center items-center"
           }
         >
-          <span className={"flex"}>Press any direction key to begin</span>
+          <span className={"flex"}>
+            {" "}
+            {orientation === "landscape"
+              ? "Press any direction key"
+              : "swipe in any direction"}{" "}
+            to begin
+          </span>
         </div>
       )}
       {gamestate.current === Gamestate.GAMEOVER && (
         <GameoverOverlay onSubmitAction={setupGame} score={snake.tail.length} />
       )}
-    </>
+    </div>
   );
 }
